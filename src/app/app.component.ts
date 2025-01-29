@@ -7,5 +7,5 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'Angular 15 CRUD example';
-  // commits testing from branch 17 new
+  testing:boolean = true
 }
