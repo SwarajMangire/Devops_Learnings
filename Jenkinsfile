@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NODE_VERSION = '18' // Set Node.js version
+        NODE_VERSION = '18'
     }
 
     stages {
@@ -17,8 +17,11 @@ pipeline {
                 script {
                     def nodeInstalled = sh(script: "node -v", returnStatus: true)
                     if (nodeInstalled != 0) {
-                        sh 'curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -'
-                        sh 'sudo yum install -y nodejs'
+                        sh '''
+                        sudo dnf module reset nodejs -y
+                        sudo dnf module enable nodejs:18 -y
+                        sudo dnf install -y nodejs
+                        '''
                     }
                     sh 'node -v'
                     sh 'npm -v'
@@ -34,7 +37,7 @@ pipeline {
 
         stage('Build Angular App') {
             steps {
-                sh 'npm run build --prod'
+                sh 'npm run build --configuration=production'
             }
         }
 
@@ -49,7 +52,13 @@ pipeline {
                 branch 'main'
             }
             steps {
-                sh 'cp -r dist/* /var/www/html/' // Change destination as needed
+                script {
+                    def deployDir = '/var/www/html/'
+                    sh "sudo mkdir -p ${deployDir}"
+                    sh "sudo rm -rf ${deployDir}*"
+                    sh "sudo cp -r dist/* ${deployDir}"
+                    sh "sudo chown -R ec2-user:ec2-user ${deployDir}"
+                }
             }
         }
     }
